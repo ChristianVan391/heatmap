@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Heat Map</title>
-    
-    <!-- Google Material Symbols -->
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
     <style>
@@ -15,7 +14,8 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -33,7 +33,6 @@
             height: 100%;
         }
 
-        /* Floating UI Overlay */
         .ui-layer {
             position: absolute;
             top: 0;
@@ -61,15 +60,16 @@
             pointer-events: auto;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 20;
         }
 
-        .icon-btn:hover, .icon-btn:active {
+        .icon-btn:hover,
+        .icon-btn:active {
             background: rgba(30, 34, 50, 0.85);
             transform: scale(1.08);
             border-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Active Pause Button Glow State */
         .icon-btn.active-pause {
             background: rgba(255, 200, 0, 0.25);
             border-color: rgba(255, 215, 0, 0.7);
@@ -77,12 +77,21 @@
             box-shadow: 0 0 20px rgba(255, 234, 0, 0.4);
         }
 
-        #themeBtn { left: 20px; }
-        #pauseBtn { left: 50%; transform: translateX(-50%); }
-        #pauseBtn:hover, #pauseBtn:active { transform: translateX(-50%) scale(1.08); }
-        #settingsBtn { right: 20px; }
+        #themeBtn {
+            left: 20px;
+        }
+        #pauseBtn {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #pauseBtn:hover,
+        #pauseBtn:active {
+            transform: translateX(-50%) scale(1.08);
+        }
+        #settingsBtn {
+            right: 20px;
+        }
 
-        /* Sleek Glass Panels */
         .panel {
             position: absolute;
             top: 80px;
@@ -108,8 +117,12 @@
             pointer-events: none;
         }
 
-        #themePanel { left: 20px; }
-        #settingsPanel { right: 20px; }
+        #themePanel {
+            left: 20px;
+        }
+        #settingsPanel {
+            right: 20px;
+        }
 
         .panel-header {
             display: flex;
@@ -127,7 +140,6 @@
             color: rgba(255, 255, 255, 0.95);
         }
 
-        /* Modern Range Sliders */
         .setting-control {
             margin-bottom: 22px;
         }
@@ -200,7 +212,6 @@
             cursor: pointer;
         }
 
-        /* Theme Option Cards */
         .theme-grid {
             display: flex;
             flex-direction: column;
@@ -255,6 +266,7 @@
             text-transform: uppercase;
             pointer-events: none;
             transition: opacity 0.8s ease;
+            z-index: 5;
         }
 
         .instruction.hidden {
@@ -269,22 +281,18 @@
     <div class="instruction" id="instruction">Touch or Drag Anywhere</div>
 
     <div class="ui-layer">
-        <!-- Themes Toggle -->
         <button class="icon-btn ui-interact" id="themeBtn" title="Color Themes">
             <span class="material-symbols-outlined">palette</span>
         </button>
 
-        <!-- Pause / Resume Button (Top Center) -->
         <button class="icon-btn ui-interact" id="pauseBtn" title="Pause Fading">
             <span class="material-symbols-outlined" id="pauseIcon">pause</span>
         </button>
 
-        <!-- Settings Toggle -->
         <button class="icon-btn ui-interact" id="settingsBtn" title="Settings">
             <span class="material-symbols-outlined">settings</span>
         </button>
 
-        <!-- Theme Panel -->
         <div class="panel hidden ui-interact" id="themePanel">
             <div class="panel-header">
                 <h3>Color Themes</h3>
@@ -292,7 +300,6 @@
             <div class="theme-grid" id="themeGrid"></div>
         </div>
 
-        <!-- Settings Panel -->
         <div class="panel hidden ui-interact" id="settingsPanel">
             <div class="panel-header">
                 <h3>Settings</h3>
@@ -302,6 +309,10 @@
                 <input type="range" id="fadeSpeed" min="0.2" max="2.0" step="0.05" value="0.5">
             </div>
             <div class="setting-control">
+                <label><span>Strength</span><span class="val-badge" id="strengthVal">1.5×</span></label>
+                <input type="range" id="brushStrength" min="0.3" max="3.0" step="0.05" value="1.5">
+            </div>
+            <div class="setting-control">
                 <label><span>Touch Size</span><span class="val-badge" id="sizeVal">60px</span></label>
                 <input type="range" id="brushSize" min="20" max="110" step="2" value="60">
             </div>
@@ -309,353 +320,394 @@
     </div>
 
     <script>
-        const mainCanvas = document.getElementById('mainCanvas');
-        const mainCtx = mainCanvas.getContext('2d');
-        const instruction = document.getElementById('instruction');
+        (function() {
+            // ─── DOM refs ───────────────────────────────────────────
+            const mainCanvas = document.getElementById('mainCanvas');
+            const mainCtx = mainCanvas.getContext('2d', { alpha: false });
+            const instruction = document.getElementById('instruction');
 
-        // Settings
-        let fadeAmount = 0.5;   // Defines volumetric decay speed
-        let brushRadius = 60;   // Brush radius in pixels
-        let isPaused = false;   // Pause fading toggle
+            // ─── Settings ───────────────────────────────────────────
+            let fadeAmount = 0.5;
+            let brushRadius = 60;
+            let brushStrength = 1.5;
+            let isPaused = false;
 
-        let dpr = 1;
-        let width = 0;
-        let height = 0;
+            // ─── Display resolution (device pixels) ─────────────────
+            let dpr = 1;
+            let width = 0;
+            let height = 0;
 
-        // Float32 Heat Buffer array for exact math
-        let heatGrid = new Float32Array(0);
+            // ─── Simulation resolution (reduced for speed) ─────────
+            //     Use 0.4 → 6.25× fewer pixels than full resolution.
+            //     Adjust higher for sharper edges, lower for better perf.
+            const SIM_SCALE = 0.4;
+            let simWidth = 0;
+            let simHeight = 0;
 
-        function resize() {
-            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-            width = Math.ceil(window.innerWidth * dpr);
-            height = Math.ceil(window.innerHeight * dpr);
+            // ─── Offscreen sim canvas & buffers ────────────────────
+            let simCanvas = document.createElement('canvas');
+            let simCtx = simCanvas.getContext('2d', { alpha: false });
+            let simImageData = null;
+            let simImageData32 = null;
+            let heatGrid = new Float32Array(0);
 
-            mainCanvas.width = width;
-            mainCanvas.height = height;
+            // ─── Color palette ─────────────────────────────────────
+            let activePalette32 = new Uint32Array(256);
+            let currentThemeKey = 'thermal';
 
-            heatGrid = new Float32Array(width * height);
-        }
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+                width = Math.ceil(window.innerWidth * dpr);
+                height = Math.ceil(window.innerHeight * dpr);
 
-        // ----------------------------------------------------
-        // COLOR THEMES (Stripy positioned last)
-        // ----------------------------------------------------
-        const themes = {
-            thermal: {
-                name: "Thermal",
-                bgColor: "#000820",
-                preview: "linear-gradient(45deg, #0a18b0, #00d4ff, #00e636, #ffea00, #e60000)",
-                stops: [
-                    { offset: 0.00, color: 'rgb(10, 24, 176)' },
-                    { offset: 0.18, color: 'rgb(0, 212, 255)' },
-                    { offset: 0.42, color: 'rgb(0, 230, 54)' },
-                    { offset: 0.70, color: 'rgb(255, 234, 0)' },
-                    { offset: 1.00, color: 'rgb(230, 0, 0)' }
-                ]
-            },
-            rainbow: {
-                name: "Rainbow",
-                bgColor: "#05050d",
-                preview: "linear-gradient(45deg, #b400ff, #0050ff, #00f078, #ffdc00, #ff0032)",
-                stops: [
-                    { offset: 0.00, color: 'rgb(5, 5, 13)' },
-                    { offset: 0.18, color: 'rgb(180, 0, 255)' },
-                    { offset: 0.38, color: 'rgb(0, 80, 255)' },
-                    { offset: 0.58, color: 'rgb(0, 240, 120)' },
-                    { offset: 0.78, color: 'rgb(255, 220, 0)' },
-                    { offset: 1.00, color: 'rgb(255, 0, 50)' }
-                ]
-            },
-            blue: {
-                name: "Blue",
-                bgColor: "#020a1a",
-                preview: "linear-gradient(45deg, #020a1a, #0038a8, #0099ff, #80d4ff, #ffffff)",
-                stops: [
-                    { offset: 0.00, color: 'rgb(2, 10, 26)' },
-                    { offset: 0.25, color: 'rgb(0, 56, 168)' },
-                    { offset: 0.55, color: 'rgb(0, 153, 255)' },
-                    { offset: 0.82, color: 'rgb(128, 212, 255)' },
-                    { offset: 1.00, color: 'rgb(255, 255, 255)' }
-                ]
-            },
-            green: {
-                name: "Green",
-                bgColor: "#011208",
-                preview: "linear-gradient(45deg, #011208, #006622, #00cc44, #a3ffb8, #ffffff)",
-                stops: [
-                    { offset: 0.00, color: 'rgb(1, 18, 8)' },
-                    { offset: 0.25, color: 'rgb(0, 102, 34)' },
-                    { offset: 0.55, color: 'rgb(0, 204, 68)' },
-                    { offset: 0.82, color: 'rgb(163, 255, 184)' },
-                    { offset: 1.00, color: 'rgb(255, 255, 255)' }
-                ]
-            },
-            pink: {
-                name: "Pink",
-                bgColor: "#ffffff",
-                preview: "linear-gradient(45deg, #ffffff, #ffb3d9, #ff3399, #cc0066)",
-                stops: [
-                    { offset: 0.00, color: 'rgb(255, 255, 255)' },
-                    { offset: 0.18, color: 'rgb(255, 182, 217)' },
-                    { offset: 0.50, color: 'rgb(255, 51, 153)' },
-                    { offset: 0.82, color: 'rgb(204, 0, 102)' },
-                    { offset: 1.00, color: 'rgb(120, 0, 60)' }
-                ]
-            },
-            stripy: {
-                name: "Stripy",
-                bgColor: "#ffffff",
-                preview: "linear-gradient(45deg, #ffffff, #333333, #ffffff, #333333)",
-                stops: []
+                mainCanvas.width = width;
+                mainCanvas.height = height;
+                mainCtx.imageSmoothingEnabled = true;
+
+                simWidth = Math.max(1, Math.ceil(width * SIM_SCALE));
+                simHeight = Math.max(1, Math.ceil(height * SIM_SCALE));
+
+                simCanvas.width = simWidth;
+                simCanvas.height = simHeight;
+                simCtx.imageSmoothingEnabled = false;
+
+                simImageData = simCtx.createImageData(simWidth, simHeight);
+                simImageData32 = new Uint32Array(simImageData.data.buffer);
+
+                heatGrid = new Float32Array(simWidth * simHeight);
             }
-        };
 
-        let currentThemeKey = 'thermal';
-        let activePalette32 = new Uint32Array(256);
-
-        function generatePalette(themeKey) {
-            const activeTheme = themes[themeKey];
-            document.body.style.backgroundColor = activeTheme.bgColor;
-
-            const pCanvas = document.createElement('canvas');
-            pCanvas.width = 256;
-            pCanvas.height = 1;
-            const pCtx = pCanvas.getContext('2d');
-
-            if (themeKey === 'stripy') {
-                const imgData = pCtx.createImageData(256, 1);
-                const data = imgData.data;
-                for (let i = 0; i < 256; i++) {
-                    const idx = i * 4;
-                    const norm = i / 255.0;
-                    // Cosine phase starts at peak (white / 255) when norm = 0, eliminating artifacts
-                    const wave = 0.5 + 0.5 * Math.cos(norm * Math.PI * 12.0);
-                    const shade = Math.floor(255 * (0.1 + 0.9 * wave));
-
-                    data[idx] = shade;     // R
-                    data[idx+1] = shade;   // G
-                    data[idx+2] = shade;   // B
-                    data[idx+3] = 255;     // A
+            // ─── Themes ─────────────────────────────────────────────
+            const themes = {
+                thermal: {
+                    name: 'Thermal',
+                    bgColor: '#000820',
+                    preview: 'linear-gradient(45deg, #0a18b0, #00d4ff, #00e636, #ffea00, #e60000)',
+                    stops: [
+                        { offset: 0.00, color: 'rgb(10, 24, 176)' },
+                        { offset: 0.18, color: 'rgb(0, 212, 255)' },
+                        { offset: 0.42, color: 'rgb(0, 230, 54)' },
+                        { offset: 0.70, color: 'rgb(255, 234, 0)' },
+                        { offset: 1.00, color: 'rgb(230, 0, 0)' }
+                    ]
+                },
+                rainbow: {
+                    name: 'Rainbow',
+                    bgColor: '#05050d',
+                    preview: 'linear-gradient(45deg, #b400ff, #0050ff, #00f078, #ffdc00, #ff0032)',
+                    stops: [
+                        { offset: 0.00, color: 'rgb(5, 5, 13)' },
+                        { offset: 0.18, color: 'rgb(180, 0, 255)' },
+                        { offset: 0.38, color: 'rgb(0, 80, 255)' },
+                        { offset: 0.58, color: 'rgb(0, 240, 120)' },
+                        { offset: 0.78, color: 'rgb(255, 220, 0)' },
+                        { offset: 1.00, color: 'rgb(255, 0, 50)' }
+                    ]
+                },
+                blue: {
+                    name: 'Blue',
+                    bgColor: '#020a1a',
+                    preview: 'linear-gradient(45deg, #020a1a, #0038a8, #0099ff, #80d4ff, #ffffff)',
+                    stops: [
+                        { offset: 0.00, color: 'rgb(2, 10, 26)' },
+                        { offset: 0.25, color: 'rgb(0, 56, 168)' },
+                        { offset: 0.55, color: 'rgb(0, 153, 255)' },
+                        { offset: 0.82, color: 'rgb(128, 212, 255)' },
+                        { offset: 1.00, color: 'rgb(255, 255, 255)' }
+                    ]
+                },
+                green: {
+                    name: 'Green',
+                    bgColor: '#011208',
+                    preview: 'linear-gradient(45deg, #011208, #006622, #00cc44, #a3ffb8, #ffffff)',
+                    stops: [
+                        { offset: 0.00, color: 'rgb(1, 18, 8)' },
+                        { offset: 0.25, color: 'rgb(0, 102, 34)' },
+                        { offset: 0.55, color: 'rgb(0, 204, 68)' },
+                        { offset: 0.82, color: 'rgb(163, 255, 184)' },
+                        { offset: 1.00, color: 'rgb(255, 255, 255)' }
+                    ]
+                },
+                pink: {
+                    name: 'Pink',
+                    bgColor: '#ffffff',
+                    preview: 'linear-gradient(45deg, #ffffff, #ffb3d9, #ff3399, #cc0066)',
+                    stops: [
+                        { offset: 0.00, color: 'rgb(255, 255, 255)' },
+                        { offset: 0.18, color: 'rgb(255, 182, 217)' },
+                        { offset: 0.50, color: 'rgb(255, 51, 153)' },
+                        { offset: 0.82, color: 'rgb(204, 0, 102)' },
+                        { offset: 1.00, color: 'rgb(120, 0, 60)' }
+                    ]
+                },
+                stripy: {
+                    name: 'Stripy',
+                    bgColor: '#ffffff',
+                    preview: 'linear-gradient(45deg, #ffffff, #333333, #ffffff, #333333)',
+                    stops: []
                 }
-                pCtx.putImageData(imgData, 0, 0);
-            } else {
-                const grad = pCtx.createLinearGradient(0, 0, 256, 0);
-                activeTheme.stops.forEach(s => grad.addColorStop(s.offset, s.color));
-                pCtx.fillStyle = grad;
-                pCtx.fillRect(0, 0, 256, 1);
+            };
+
+            function generatePalette(themeKey) {
+                const t = themes[themeKey];
+                document.body.style.backgroundColor = t.bgColor;
+
+                const pc = document.createElement('canvas');
+                pc.width = 256;
+                pc.height = 1;
+                const pctx = pc.getContext('2d');
+
+                if (themeKey === 'stripy') {
+                    const id = pctx.createImageData(256, 1);
+                    const d = id.data;
+                    for (let i = 0; i < 256; i++) {
+                        const n = i / 255.0;
+                        const wave = 0.5 + 0.5 * Math.cos(n * Math.PI * 12.0);
+                        const s = Math.floor(255 * (0.1 + 0.9 * wave));
+                        d[i * 4] = s;
+                        d[i * 4 + 1] = s;
+                        d[i * 4 + 2] = s;
+                        d[i * 4 + 3] = 255;
+                    }
+                    pctx.putImageData(id, 0, 0);
+                } else {
+                    const grad = pctx.createLinearGradient(0, 0, 256, 0);
+                    t.stops.forEach(s => grad.addColorStop(s.offset, s.color));
+                    pctx.fillStyle = grad;
+                    pctx.fillRect(0, 0, 256, 1);
+                }
+
+                const id2 = pctx.getImageData(0, 0, 256, 1);
+                activePalette32 = new Uint32Array(id2.data.buffer);
             }
 
-            const imgDataFinal = pCtx.getImageData(0, 0, 256, 1);
-            activePalette32 = new Uint32Array(imgDataFinal.data.buffer);
-        }
+            // ─── Pointer tracking ───────────────────────────────────
+            const activePointers = new Map();
+            let hasInteracted = false;
 
-        resize();
-        window.addEventListener('resize', resize);
-        generatePalette(currentThemeKey);
+            function addHeatPoint(cx, cy) {
+                // cx, cy in display pixel space
+                const sx = cx * SIM_SCALE;
+                const sy = cy * SIM_SCALE;
+                const rSim = brushRadius * dpr * SIM_SCALE;
+                const rSq = rSim * rSim;
 
-        // ----------------------------------------------------
-        // SEAMLESS CAPSULE ENGINE WITH HIGH-DENSITY SUBSTEPS
-        // ----------------------------------------------------
-        const activePointers = new Map();
-        let hasInteracted = false;
+                const minX = Math.max(0, Math.floor(sx - rSim));
+                const maxX = Math.min(simWidth - 1, Math.ceil(sx + rSim));
+                const minY = Math.max(0, Math.floor(sy - rSim));
+                const maxY = Math.min(simHeight - 1, Math.ceil(sy + rSim));
 
-        function addHeatPoint(cx, cy) {
-            if (!hasInteracted) {
-                hasInteracted = true;
-                instruction.classList.add('hidden');
-            }
+                if (maxX < minX || maxY < minY) return;
 
-            const r = Math.ceil(brushRadius * dpr);
-            const rSq = r * r;
+                // Strength affects falloff profile (higher = flatter, more intense)
+                const strengthPower = 1.0 / brushStrength;
+                // Strength also boosts fade-in speed
+                const fadeInRate = Math.min(1.0, fadeAmount * 0.125 * brushStrength);
 
-            const minX = Math.max(0, Math.floor(cx - r));
-            const maxX = Math.min(width - 1, Math.ceil(cx + r));
-            const minY = Math.max(0, Math.floor(cy - r));
-            const maxY = Math.min(height - 1, Math.ceil(cy + r));
+                for (let y = minY; y <= maxY; y++) {
+                    const py = y - sy;
+                    const row = y * simWidth;
+                    const pySq = py * py;
 
-            for (let y = minY; y <= maxY; y++) {
-                const py = y - cy;
-                const rowOffset = y * width;
-                const pySq = py * py;
+                    for (let x = minX; x <= maxX; x++) {
+                        const px = x - sx;
+                        const distSq = px * px + pySq;
+                        if (distSq >= rSq) continue;
 
-                for (let x = minX; x <= maxX; x++) {
-                    const px = x - cx;
-                    const distSq = px * px + pySq;
-
-                    if (distSq < rSq) {
-                        const normDist = Math.sqrt(distSq) / r;
-                        const falloff = 0.5 * (1 + Math.cos(normDist * Math.PI));
-                        const targetHeat = 255.0 * falloff;
-                        const idx = rowOffset + x;
-
-                        // Fade-in speed matches the fade out speed setting (* 1.5)
-                        const fadeInRate = Math.min(1.0, fadeAmount * 0.125);
-                        const currentHeat = heatGrid[idx];
-                        const smoothStep = currentHeat + (targetHeat - currentHeat) * fadeInRate;
-                        
-                        if (smoothStep > heatGrid[idx]) {
-                            heatGrid[idx] = Math.min(255.0, smoothStep);
+                        const normDist = Math.sqrt(distSq) / rSim;
+                        const falloff = Math.pow(0.5 * (1 + Math.cos(normDist * Math.PI)), strengthPower);
+                        const target = 255.0 * falloff;
+                        const idx = row + x;
+                        const cur = heatGrid[idx];
+                        const next = cur + (target - cur) * fadeInRate;
+                        if (next > cur) {
+                            heatGrid[idx] = Math.min(255.0, next);
                         }
                     }
                 }
             }
-        }
 
-        function handlePointerDown(e) {
-            const px = e.clientX * dpr;
-            const py = e.clientY * dpr;
-            activePointers.set(e.pointerId, { x: px, y: py, lastX: px, lastY: py });
-            addHeatPoint(px, py);
-        }
+            function handlePointerDown(e) {
+                const px = e.clientX * dpr;
+                const py = e.clientY * dpr;
+                activePointers.set(e.pointerId, { x: px, y: py, lastX: px, lastY: py });
+                addHeatPoint(px, py);
+                if (!hasInteracted) {
+                    hasInteracted = true;
+                    instruction.classList.add('hidden');
+                }
+            }
 
-        function handlePointerMove(e) {
-            if (activePointers.has(e.pointerId)) {
+            function handlePointerMove(e) {
                 const p = activePointers.get(e.pointerId);
-                p.x = e.clientX * dpr;
-                p.y = e.clientY * dpr;
+                if (p) {
+                    p.x = e.clientX * dpr;
+                    p.y = e.clientY * dpr;
+                }
             }
-        }
 
-        function handlePointerUp(e) {
-            activePointers.delete(e.pointerId);
-        }
-
-        mainCanvas.addEventListener('pointerdown', handlePointerDown);
-        mainCanvas.addEventListener('pointermove', handlePointerMove);
-        mainCanvas.addEventListener('pointerup', handlePointerUp);
-        mainCanvas.addEventListener('pointercancel', handlePointerUp);
-
-        document.querySelectorAll('.ui-interact').forEach(el => {
-            el.addEventListener('pointerdown', (e) => e.stopPropagation());
-            el.addEventListener('pointermove', (e) => e.stopPropagation());
-            el.addEventListener('pointerup', (e) => e.stopPropagation());
-        });
-
-        // ----------------------------------------------------
-        // UI PANEL CONTROLS
-        // ----------------------------------------------------
-        const themeBtn = document.getElementById('themeBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const pauseIcon = document.getElementById('pauseIcon');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const themePanel = document.getElementById('themePanel');
-        const settingsPanel = document.getElementById('settingsPanel');
-
-        pauseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isPaused = !isPaused;
-            if (isPaused) {
-                pauseIcon.textContent = 'play_arrow';
-                pauseBtn.classList.add('active-pause');
-                pauseBtn.title = "Resume Fading";
-            } else {
-                pauseIcon.textContent = 'pause';
-                pauseBtn.classList.remove('active-pause');
-                pauseBtn.title = "Pause Fading";
+            function handlePointerUp(e) {
+                activePointers.delete(e.pointerId);
             }
-        });
 
-        themeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            themePanel.classList.toggle('hidden');
-            settingsPanel.classList.add('hidden');
-        });
+            mainCanvas.addEventListener('pointerdown', handlePointerDown);
+            mainCanvas.addEventListener('pointermove', handlePointerMove);
+            mainCanvas.addEventListener('pointerup', handlePointerUp);
+            mainCanvas.addEventListener('pointercancel', handlePointerUp);
 
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsPanel.classList.toggle('hidden');
-            themePanel.classList.add('hidden');
-        });
-
-        window.addEventListener('click', (e) => {
-            if (!themePanel.contains(e.target) && !themeBtn.contains(e.target)) {
-                themePanel.classList.add('hidden');
-            }
-            if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
-                settingsPanel.classList.add('hidden');
-            }
-        });
-
-        const themeGrid = document.getElementById('themeGrid');
-        Object.keys(themes).forEach(key => {
-            const t = themes[key];
-            const item = document.createElement('div');
-            item.className = `theme-option ${key === currentThemeKey ? 'active' : ''}`;
-            item.innerHTML = `
-                <div class="theme-preview" style="background: ${t.preview}"></div>
-                <span>${t.name}</span>
-            `;
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
-                currentThemeKey = key;
-                generatePalette(key);
+            // Prevent UI interactions from reaching canvas
+            document.querySelectorAll('.ui-interact').forEach(el => {
+                el.addEventListener('pointerdown', e => e.stopPropagation());
+                el.addEventListener('pointermove', e => e.stopPropagation());
+                el.addEventListener('pointerup', e => e.stopPropagation());
             });
-            themeGrid.appendChild(item);
-        });
 
-        const fadeInput = document.getElementById('fadeSpeed');
-        const fadeVal = document.getElementById('fadeVal');
-        fadeInput.addEventListener('input', (e) => {
-            fadeAmount = parseFloat(e.target.value);
-            fadeVal.textContent = fadeAmount > 1.2 ? "Fast" : fadeAmount > 0.6 ? "Medium" : "Slow";
-        });
+            // ─── UI Controls ────────────────────────────────────────
+            const themeBtn = document.getElementById('themeBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const pauseIcon = document.getElementById('pauseIcon');
+            const settingsBtn = document.getElementById('settingsBtn');
+            const themePanel = document.getElementById('themePanel');
+            const settingsPanel = document.getElementById('settingsPanel');
 
-        const sizeInput = document.getElementById('brushSize');
-        const sizeVal = document.getElementById('sizeVal');
-        sizeInput.addEventListener('input', (e) => {
-            brushRadius = parseInt(e.target.value);
-            sizeVal.textContent = brushRadius + 'px';
-        });
-
-        // ----------------------------------------------------
-        // ANIMATION LOOP
-        // ----------------------------------------------------
-        function animate() {
-            // High-density sub-step interpolation for ultra-smooth strokes at any speed
-            activePointers.forEach((p) => {
-                const dx = p.x - p.lastX;
-                const dy = p.y - p.lastY;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist > 0.2) {
-                    const stepSize = Math.max(1.5, brushRadius * 0.1 * dpr);
-                    const steps = Math.ceil(dist / stepSize);
-                    for (let i = 1; i <= steps; i++) {
-                        const t = i / steps;
-                        addHeatPoint(p.lastX + dx * t, p.lastY + dy * t);
-                    }
+            pauseBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                isPaused = !isPaused;
+                if (isPaused) {
+                    pauseIcon.textContent = 'play_arrow';
+                    pauseBtn.classList.add('active-pause');
+                    pauseBtn.title = 'Resume Fading';
                 } else {
-                    addHeatPoint(p.x, p.y);
+                    pauseIcon.textContent = 'pause';
+                    pauseBtn.classList.remove('active-pause');
+                    pauseBtn.title = 'Pause Fading';
                 }
-                p.lastX = p.x;
-                p.lastY = p.y;
             });
 
-            const len = width * height;
-            const dispImgData = mainCtx.createImageData(width, height);
-            const disp32 = new Uint32Array(dispImgData.data.buffer);
+            themeBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                themePanel.classList.toggle('hidden');
+                settingsPanel.classList.add('hidden');
+            });
 
-            // Volumetric Multiplicative Decay prevents the taper bug
-            const decay = 1.0 - (fadeAmount * 0.025);
-            const linearErode = fadeAmount * 0.05;
+            settingsBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                settingsPanel.classList.toggle('hidden');
+                themePanel.classList.add('hidden');
+            });
 
-            for (let i = 0; i < len; i++) {
-                let h = heatGrid[i];
-                
-                if (!isPaused && h > 0) {
-                    h = (h * decay) - linearErode;
-                    if (h <= 0) h = 0;
-                    heatGrid[i] = h;
+            window.addEventListener('click', e => {
+                if (!themePanel.contains(e.target) && !themeBtn.contains(e.target)) {
+                    themePanel.classList.add('hidden');
                 }
-                
-                disp32[i] = activePalette32[h | 0];
+                if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                    settingsPanel.classList.add('hidden');
+                }
+            });
+
+            // Theme grid
+            const themeGrid = document.getElementById('themeGrid');
+            Object.keys(themes).forEach(key => {
+                const t = themes[key];
+                const item = document.createElement('div');
+                item.className = `theme-option ${key === currentThemeKey ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="theme-preview" style="background: ${t.preview}"></div>
+                    <span>${t.name}</span>
+                `;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    currentThemeKey = key;
+                    generatePalette(key);
+                });
+                themeGrid.appendChild(item);
+            });
+
+            // Sliders
+            const fadeInput = document.getElementById('fadeSpeed');
+            const fadeVal = document.getElementById('fadeVal');
+            fadeInput.addEventListener('input', e => {
+                fadeAmount = parseFloat(e.target.value);
+                fadeVal.textContent = fadeAmount > 1.2 ? 'Fast' : fadeAmount > 0.6 ? 'Medium' : 'Slow';
+            });
+
+            const strengthInput = document.getElementById('brushStrength');
+            const strengthVal = document.getElementById('strengthVal');
+            strengthInput.addEventListener('input', e => {
+                brushStrength = parseFloat(e.target.value);
+                strengthVal.textContent = brushStrength.toFixed(1) + '×';
+            });
+
+            const sizeInput = document.getElementById('brushSize');
+            const sizeVal = document.getElementById('sizeVal');
+            sizeInput.addEventListener('input', e => {
+                brushRadius = parseInt(e.target.value);
+                sizeVal.textContent = brushRadius + 'px';
+            });
+
+            // ─── Animation Loop ─────────────────────────────────────
+            const decayCache = { lastFade: -1, decay: 1, erode: 0 };
+
+            function animate() {
+                // --- Brush stamping with sub-steps ---
+                activePointers.forEach(p => {
+                    const dx = p.x - p.lastX;
+                    const dy = p.y - p.lastY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 0.2) {
+                        const stepSize = Math.max(1.5, brushRadius * 0.1 * dpr);
+                        const steps = Math.ceil(dist / stepSize);
+                        for (let i = 1; i <= steps; i++) {
+                            const t = i / steps;
+                            addHeatPoint(p.lastX + dx * t, p.lastY + dy * t);
+                        }
+                    } else {
+                        addHeatPoint(p.x, p.y);
+                    }
+                    p.lastX = p.x;
+                    p.lastY = p.y;
+                });
+
+                // --- Decay (cached computation) ---
+                if (!isPaused) {
+                    if (fadeAmount !== decayCache.lastFade) {
+                        decayCache.lastFade = fadeAmount;
+                        decayCache.decay = 1.0 - fadeAmount * 0.025;
+                        decayCache.erode = fadeAmount * 0.05;
+                    }
+                    const dec = decayCache.decay;
+                    const ero = decayCache.erode;
+                    const len = simWidth * simHeight;
+                    for (let i = 0; i < len; i++) {
+                        const h = heatGrid[i];
+                        if (h > 0) {
+                            const nh = h * dec - ero;
+                            heatGrid[i] = nh > 0 ? nh : 0;
+                        }
+                    }
+                }
+
+                // --- Map heat → palette → sim canvas ---
+                const len = simWidth * simHeight;
+                for (let i = 0; i < len; i++) {
+                    simImageData32[i] = activePalette32[heatGrid[i] | 0];
+                }
+                simCtx.putImageData(simImageData, 0, 0);
+
+                // --- Upscale sim canvas → main canvas (GPU-accelerated) ---
+                mainCtx.drawImage(simCanvas, 0, 0, width, height);
+
+                requestAnimationFrame(animate);
             }
 
-            mainCtx.putImageData(dispImgData, 0, 0);
-            requestAnimationFrame(animate);
-        }
-
-        animate();
+            // ─── Boot ───────────────────────────────────────────────
+            resize();
+            generatePalette(currentThemeKey);
+            window.addEventListener('resize', resize);
+            animate();
+        })();
     </script>
 </body>
 </html>
