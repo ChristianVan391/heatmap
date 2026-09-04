@@ -327,9 +327,9 @@
             const instruction = document.getElementById('instruction');
 
             // ─── Settings ───────────────────────────────────────────
-            let fadeAmount = 0.5;
+            let fadeAmount = 1;
             let brushRadius = 60;
-            let brushStrength = 1.5;
+            const brushStrength = 2;
             let isPaused = false;
 
             // ─── Display resolution (device pixels) ─────────────────
@@ -502,7 +502,7 @@
                 // Strength affects falloff profile (higher = flatter, more intense)
                 const strengthPower = 1.0 / brushStrength;
                 // Strength also boosts fade-in speed
-                const fadeInRate = Math.min(1.0, fadeAmount * 0.125);
+                const fadeInRate = Math.min(1.0, fadeAmount * 0.125 * brushStrength);
 
                 for (let y = minY; y <= maxY; y++) {
                     const py = y - sy;
@@ -630,13 +630,6 @@
             fadeInput.addEventListener('input', e => {
                 fadeAmount = parseFloat(e.target.value);
                 fadeVal.textContent = fadeAmount > 1.2 ? 'Fast' : fadeAmount > 0.6 ? 'Medium' : 'Slow';
-            });
-
-            const strengthInput = document.getElementById('brushStrength');
-            const strengthVal = document.getElementById('strengthVal');
-            strengthInput.addEventListener('input', e => {
-                brushStrength = parseFloat(e.target.value);
-                strengthVal.textContent = brushStrength.toFixed(1) + '×';
             });
 
             const sizeInput = document.getElementById('brushSize');
