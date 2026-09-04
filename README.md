@@ -12,4 +12,4 @@ An interactive web toy where you paint glowing heat maps with your mouse or fing
 
 ## how to use
 
-Click [here](https://christianvan391.github.io/HeatMap/) to try it your self :D.
+Click [here](https://christianvan391.github.io/heatmap/) to try it your self :D.
