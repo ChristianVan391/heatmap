@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fluid Thermal Pad</title>
+    
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000820;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.4s ease;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating UI Overlay */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .icon-btn {
+            position: absolute;
+            top: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(16, 18, 28, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-btn:hover, .icon-btn:active {
+            background: rgba(30, 34, 50, 0.85);
+            transform: scale(1.08);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Active Pause Button Glow State */
+        .icon-btn.active-pause {
+            background: rgba(255, 200, 0, 0.25);
+            border-color: rgba(255, 215, 0, 0.7);
+            color: #ffea00;
+            box-shadow: 0 0 20px rgba(255, 234, 0, 0.4);
+        }
+
+        #themeBtn { left: 20px; }
+        #pauseBtn { left: 50%; transform: translateX(-50%); }
+        #pauseBtn:hover, #pauseBtn:active { transform: translateX(-50%) scale(1.08); }
+        #settingsBtn { right: 20px; }
+
+        /* Sleek Glass Panels */
+        .panel {
+            position: absolute;
+            top: 80px;
+            width: 290px;
+            max-width: calc(100vw - 40px);
+            background: rgba(16, 18, 28, 0.72);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 24px;
+            padding: 22px;
+            color: #ffffff;
+            pointer-events: auto;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+            z-index: 10;
+        }
+
+        .panel.hidden {
+            opacity: 0;
+            transform: translateY(-12px);
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #themePanel { left: 20px; }
+        #settingsPanel { right: 20px; }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .panel-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Modern Range Sliders */
+        .setting-control {
+            margin-bottom: 22px;
+        }
+
+        .setting-control:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-control label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 12px;
+        }
+
+        .setting-control label span.val-badge {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5);
+            margin-top: -7px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.18);
+        }
+
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: none;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        /* Theme Option Cards */
+        .theme-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 330px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 15px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .theme-option:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .theme-option.active {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.45);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .theme-preview {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            flex-shrink: 0;
+        }
+
+        .instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.9rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+
+        .instruction.hidden {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="mainCanvas"></canvas>
+
+    <div class="instruction" id="instruction">Touch or Drag Anywhere</div>
+
+    <div class="ui-layer">
+        <!-- Themes Toggle -->
+        <button class="icon-btn ui-interact" id="themeBtn" title="Color Themes">
+            <span class="material-symbols-outlined">palette</span>
+        </button>
+
+        <!-- Pause / Resume Button (Top Center) -->
+        <button class="icon-btn ui-interact" id="pauseBtn" title="Pause Fading">
+            <span class="material-symbols-outlined" id="pauseIcon">pause</span>
+        </button>
+
+        <!-- Settings Toggle -->
+        <button class="icon-btn ui-interact" id="settingsBtn" title="Settings">
+            <span class="material-symbols-outlined">settings</span>
+        </button>
+
+        <!-- Theme Panel -->
+        <div class="panel hidden ui-interact" id="themePanel">
+            <div class="panel-header">
+                <h3>Color Themes</h3>
+            </div>
+            <div class="theme-grid" id="themeGrid"></div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="panel hidden ui-interact" id="settingsPanel">
+            <div class="panel-header">
+                <h3>Settings</h3>
+            </div>
+            <div class="setting-control">
+                <label><span>Fade Speed</span><span class="val-badge" id="fadeVal">Slow</span></label>
+                <input type="range" id="fadeSpeed" min="0.2" max="2.0" step="0.05" value="0.5">
+            </div>
+            <div class="setting-control">
+                <label><span>Touch Size</span><span class="val-badge" id="sizeVal">60px</span></label>
+                <input type="range" id="brushSize" min="20" max="110" step="2" value="60">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const instruction = document.getElementById('instruction');
+
+        // Settings
+        let fadeAmount = 0.5;   // Defines volumetric decay speed
+        let brushRadius = 60;   // Brush radius in pixels
+        let isPaused = false;   // Pause fading toggle
+
+        let dpr = 1;
+        let width = 0;
+        let height = 0;
+
+        // Float32 Heat Buffer array for exact math
+        let heatGrid = new Float32Array(0);
+
+        function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            width = Math.ceil(window.innerWidth * dpr);
+            height = Math.ceil(window.innerHeight * dpr);
+
+            mainCanvas.width = width;
+            mainCanvas.height = height;
+
+            heatGrid = new Float32Array(width * height);
+        }
+
+        // ----------------------------------------------------
+        // COLOR THEMES (Stripy positioned last)
+        // ----------------------------------------------------
+        const themes = {
+            thermal: {
+                name: "Thermal",
+                bgColor: "#000820",
+                preview: "linear-gradient(45deg, #0a18b0, #00d4ff, #00e636, #ffea00, #e60000)",
+                stops: [
+                    { offset: 0.00, color: 'rgb(10, 24, 176)' },
+                    { offset: 0.18, color: 'rgb(0, 212, 255)' },
+                    { offset: 0.42, color: 'rgb(0, 230, 54)' },
+                    { offset: 0.70, color: 'rgb(255, 234, 0)' },
+                    { offset: 1.00, color: 'rgb(230, 0, 0)' }
+                ]
+            },
+            rainbow: {
+                name: "Rainbow",
+                bgColor: "#05050d",
+                preview: "linear-gradient(45deg, #b400ff, #0050ff, #00f078, #ffdc00, #ff0032)",
+                stops: [
+                    { offset: 0.00, color: 'rgb(5, 5, 13)' },
+                    { offset: 0.18, color: 'rgb(180, 0, 255)' },
+                    { offset: 0.38, color: 'rgb(0, 80, 255)' },
+                    { offset: 0.58, color: 'rgb(0, 240, 120)' },
+                    { offset: 0.78, color: 'rgb(255, 220, 0)' },
+                    { offset: 1.00, color: 'rgb(255, 0, 50)' }
+                ]
+            },
+            blue: {
+                name: "Blue",
+                bgColor: "#020a1a",
+                preview: "linear-gradient(45deg, #020a1a, #0038a8, #0099ff, #80d4ff, #ffffff)",
+                stops: [
+                    { offset: 0.00, color: 'rgb(2, 10, 26)' },
+                    { offset: 0.25, color: 'rgb(0, 56, 168)' },
+                    { offset: 0.55, color: 'rgb(0, 153, 255)' },
+                    { offset: 0.82, color: 'rgb(128, 212, 255)' },
+                    { offset: 1.00, color: 'rgb(255, 255, 255)' }
+                ]
+            },
+            green: {
+                name: "Green",
+                bgColor: "#011208",
+                preview: "linear-gradient(45deg, #011208, #006622, #00cc44, #a3ffb8, #ffffff)",
+                stops: [
+                    { offset: 0.00, color: 'rgb(1, 18, 8)' },
+                    { offset: 0.25, color: 'rgb(0, 102, 34)' },
+                    { offset: 0.55, color: 'rgb(0, 204, 68)' },
+                    { offset: 0.82, color: 'rgb(163, 255, 184)' },
+                    { offset: 1.00, color: 'rgb(255, 255, 255)' }
+                ]
+            },
+            pink: {
+                name: "Pink",
+                bgColor: "#ffffff",
+                preview: "linear-gradient(45deg, #ffffff, #ffb3d9, #ff3399, #cc0066)",
+                stops: [
+                    { offset: 0.00, color: 'rgb(255, 255, 255)' },
+                    { offset: 0.18, color: 'rgb(255, 182, 217)' },
+                    { offset: 0.50, color: 'rgb(255, 51, 153)' },
+                    { offset: 0.82, color: 'rgb(204, 0, 102)' },
+                    { offset: 1.00, color: 'rgb(120, 0, 60)' }
+                ]
+            },
+            stripy: {
+                name: "Stripy",
+                bgColor: "#ffffff",
+                preview: "linear-gradient(45deg, #ffffff, #333333, #ffffff, #333333)",
+                stops: []
+            }
+        };
+
+        let currentThemeKey = 'thermal';
+        let activePalette32 = new Uint32Array(256);
+
+        function generatePalette(themeKey) {
+            const activeTheme = themes[themeKey];
+            document.body.style.backgroundColor = activeTheme.bgColor;
+
+            const pCanvas = document.createElement('canvas');
+            pCanvas.width = 256;
+            pCanvas.height = 1;
+            const pCtx = pCanvas.getContext('2d');
+
+            if (themeKey === 'stripy') {
+                const imgData = pCtx.createImageData(256, 1);
+                const data = imgData.data;
+                for (let i = 0; i < 256; i++) {
+                    const idx = i * 4;
+                    const norm = i / 255.0;
+                    // Cosine phase starts at peak (white / 255) when norm = 0, eliminating artifacts
+                    const wave = 0.5 + 0.5 * Math.cos(norm * Math.PI * 12.0);
+                    const shade = Math.floor(255 * (0.1 + 0.9 * wave));
+
+                    data[idx] = shade;     // R
+                    data[idx+1] = shade;   // G
+                    data[idx+2] = shade;   // B
+                    data[idx+3] = 255;     // A
+                }
+                pCtx.putImageData(imgData, 0, 0);
+            } else {
+                const grad = pCtx.createLinearGradient(0, 0, 256, 0);
+                activeTheme.stops.forEach(s => grad.addColorStop(s.offset, s.color));
+                pCtx.fillStyle = grad;
+                pCtx.fillRect(0, 0, 256, 1);
+            }
+
+            const imgDataFinal = pCtx.getImageData(0, 0, 256, 1);
+            activePalette32 = new Uint32Array(imgDataFinal.data.buffer);
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+        generatePalette(currentThemeKey);
+
+        // ----------------------------------------------------
+        // SEAMLESS CAPSULE ENGINE WITH HIGH-DENSITY SUBSTEPS
+        // ----------------------------------------------------
+        const activePointers = new Map();
+        let hasInteracted = false;
+
+        function addHeatPoint(cx, cy) {
+            if (!hasInteracted) {
+                hasInteracted = true;
+                instruction.classList.add('hidden');
+            }
+
+            const r = Math.ceil(brushRadius * dpr);
+            const rSq = r * r;
+
+            const minX = Math.max(0, Math.floor(cx - r));
+            const maxX = Math.min(width - 1, Math.ceil(cx + r));
+            const minY = Math.max(0, Math.floor(cy - r));
+            const maxY = Math.min(height - 1, Math.ceil(cy + r));
+
+            for (let y = minY; y <= maxY; y++) {
+                const py = y - cy;
+                const rowOffset = y * width;
+                const pySq = py * py;
+
+                for (let x = minX; x <= maxX; x++) {
+                    const px = x - cx;
+                    const distSq = px * px + pySq;
+
+                    if (distSq < rSq) {
+                        const normDist = Math.sqrt(distSq) / r;
+                        const falloff = 0.5 * (1 + Math.cos(normDist * Math.PI));
+                        const targetHeat = 255.0 * falloff;
+                        const idx = rowOffset + x;
+
+                        // Fade-in speed matches the fade out speed setting (* 1.5)
+                        const fadeInRate = Math.min(1.0, fadeAmount * 0.125);
+                        const currentHeat = heatGrid[idx];
+                        const smoothStep = currentHeat + (targetHeat - currentHeat) * fadeInRate;
+                        
+                        if (smoothStep > heatGrid[idx]) {
+                            heatGrid[idx] = Math.min(255.0, smoothStep);
+                        }
+                    }
+                }
+            }
+        }
+
+        function handlePointerDown(e) {
+            const px = e.clientX * dpr;
+            const py = e.clientY * dpr;
+            activePointers.set(e.pointerId, { x: px, y: py, lastX: px, lastY: py });
+            addHeatPoint(px, py);
+        }
+
+        function handlePointerMove(e) {
+            if (activePointers.has(e.pointerId)) {
+                const p = activePointers.get(e.pointerId);
+                p.x = e.clientX * dpr;
+                p.y = e.clientY * dpr;
+            }
+        }
+
+        function handlePointerUp(e) {
+            activePointers.delete(e.pointerId);
+        }
+
+        mainCanvas.addEventListener('pointerdown', handlePointerDown);
+        mainCanvas.addEventListener('pointermove', handlePointerMove);
+        mainCanvas.addEventListener('pointerup', handlePointerUp);
+        mainCanvas.addEventListener('pointercancel', handlePointerUp);
+
+        document.querySelectorAll('.ui-interact').forEach(el => {
+            el.addEventListener('pointerdown', (e) => e.stopPropagation());
+            el.addEventListener('pointermove', (e) => e.stopPropagation());
+            el.addEventListener('pointerup', (e) => e.stopPropagation());
+        });
+
+        // ----------------------------------------------------
+        // UI PANEL CONTROLS
+        // ----------------------------------------------------
+        const themeBtn = document.getElementById('themeBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const themePanel = document.getElementById('themePanel');
+        const settingsPanel = document.getElementById('settingsPanel');
+
+        pauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseIcon.textContent = 'play_arrow';
+                pauseBtn.classList.add('active-pause');
+                pauseBtn.title = "Resume Fading";
+            } else {
+                pauseIcon.textContent = 'pause';
+                pauseBtn.classList.remove('active-pause');
+                pauseBtn.title = "Pause Fading";
+            }
+        });
+
+        themeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themePanel.classList.toggle('hidden');
+            settingsPanel.classList.add('hidden');
+        });
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.toggle('hidden');
+            themePanel.classList.add('hidden');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!themePanel.contains(e.target) && !themeBtn.contains(e.target)) {
+                themePanel.classList.add('hidden');
+            }
+            if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsPanel.classList.add('hidden');
+            }
+        });
+
+        const themeGrid = document.getElementById('themeGrid');
+        Object.keys(themes).forEach(key => {
+            const t = themes[key];
+            const item = document.createElement('div');
+            item.className = `theme-option ${key === currentThemeKey ? 'active' : ''}`;
+            item.innerHTML = `
+                <div class="theme-preview" style="background: ${t.preview}"></div>
+                <span>${t.name}</span>
+            `;
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                currentThemeKey = key;
+                generatePalette(key);
+            });
+            themeGrid.appendChild(item);
+        });
+
+        const fadeInput = document.getElementById('fadeSpeed');
+        const fadeVal = document.getElementById('fadeVal');
+        fadeInput.addEventListener('input', (e) => {
+            fadeAmount = parseFloat(e.target.value);
+            fadeVal.textContent = fadeAmount > 1.2 ? "Fast" : fadeAmount > 0.6 ? "Medium" : "Slow";
+        });
+
+        const sizeInput = document.getElementById('brushSize');
+        const sizeVal = document.getElementById('sizeVal');
+        sizeInput.addEventListener('input', (e) => {
+            brushRadius = parseInt(e.target.value);
+            sizeVal.textContent = brushRadius + 'px';
+        });
+
+        // ----------------------------------------------------
+        // ANIMATION LOOP
+        // ----------------------------------------------------
+        function animate() {
+            // High-density sub-step interpolation for ultra-smooth strokes at any speed
+            activePointers.forEach((p) => {
+                const dx = p.x - p.lastX;
+                const dy = p.y - p.lastY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 0.2) {
+                    const stepSize = Math.max(1.5, brushRadius * 0.1 * dpr);
+                    const steps = Math.ceil(dist / stepSize);
+                    for (let i = 1; i <= steps; i++) {
+                        const t = i / steps;
+                        addHeatPoint(p.lastX + dx * t, p.lastY + dy * t);
+                    }
+                } else {
+                    addHeatPoint(p.x, p.y);
+                }
+                p.lastX = p.x;
+                p.lastY = p.y;
+            });
+
+            const len = width * height;
+            const dispImgData = mainCtx.createImageData(width, height);
+            const disp32 = new Uint32Array(dispImgData.data.buffer);
+
+            // Volumetric Multiplicative Decay prevents the taper bug
+            const decay = 1.0 - (fadeAmount * 0.025);
+            const linearErode = fadeAmount * 0.05;
+
+            for (let i = 0; i < len; i++) {
+                let h = heatGrid[i];
+                
+                if (!isPaused && h > 0) {
+                    h = (h * decay) - linearErode;
+                    if (h <= 0) h = 0;
+                    heatGrid[i] = h;
+                }
+                
+                disp32[i] = activePalette32[h | 0];
+            }
+
+            mainCtx.putImageData(dispImgData, 0, 0);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
