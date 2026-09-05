@@ -325,7 +325,7 @@
             // ─── Settings ───────────────────────────────────────────
             let fadeAmount = 0.25;
             let brushRadius = 60;
-            const brushStrength = 2.5;
+            const brushStrength = 2;
             let isPaused = false;
 
             // ─── Display resolution (device pixels) ─────────────────
@@ -336,7 +336,7 @@
             // ─── Simulation resolution (reduced for speed) ─────────
             //     Use 0.4 → 6.25× fewer pixels than full resolution.
             //     Adjust higher for sharper edges, lower for better perf.
-            const SIM_SCALE = 0.332;
+            const SIM_SCALE = 0.4;
             let simWidth = 0;
             let simHeight = 0;
 
@@ -684,7 +684,7 @@
                     const h = heatGrid[i] / 255.0;
 
                 // LOOK HERE ME IN THE FUTER
-                const clipped = Math.pow(h, 0.5);
+                const clipped = Math.pow(h, 0.25);
 
                 simImageData32[i] = activePalette32[Math.min(255, clipped * 255) | 0];
                 }
