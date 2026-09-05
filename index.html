@@ -681,7 +681,7 @@
                 // --- Map heat → palette → sim canvas ---
                 const len = simWidth * simHeight;
                 for (let i = 0; i < len; i++) {
-                    simImageData32[i] = activePalette32[heatGrid[i] | 0];
+                    simImageData32[i] = activePalette32[Math.min(255,               Math.pow(heatGrid[i] / 255, 1 / 1.5) * 255) | 0];
                 }
                 simCtx.putImageData(simImageData, 0, 0);
 
