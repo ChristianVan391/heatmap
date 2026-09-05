@@ -498,7 +498,7 @@
                 // LOOK HERE!!!! Strength affects falloff profile (higher = flatter, more intense)
                 const strengthPower = 1.0 / brushStrength;
                 // Strength also boosts fade-in speed
-                const fadeInRate = Math.min(1.0, fadeAmount * 0.095 * brushStrength);
+                const fadeInRate = Math.min(1.0, fadeAmount * 0.3 * brushStrength);
 
                 for (let y = minY; y <= maxY; y++) {
                     const py = y - sy;
@@ -684,9 +684,9 @@
                     const h = heatGrid[i] / 255.0;
 
                 // LOOK HERE ME IN THE FUTER
-                const clipped = Math.pow(h, 1.875);
+                const clipped = Math.pow(h, 1.5);
 
-                simImageData32[i] = activePalette32[Math.min(255, clipped * 950) | 0];
+                simImageData32[i] = activePalette32[Math.min(255, clipped * 620) | 0];
                 }
                 simCtx.putImageData(simImageData, 0, 0);
 
