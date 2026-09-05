@@ -323,9 +323,9 @@
             const instruction = document.getElementById('instruction');
 
             // ─── Settings ───────────────────────────────────────────
-            let fadeAmount = 1;
+            let fadeAmount = 0.25;
             let brushRadius = 60;
-            const brushStrength = 3.25;
+            const brushStrength = 6.5;
             let isPaused = false;
 
             // ─── Display resolution (device pixels) ─────────────────
@@ -413,7 +413,7 @@
                     ]
                 },
                 green: {
-                    name: 'Glow in the dark',
+                    name: 'Glow',
                     bgColor: '#011208',
                     preview: 'linear-gradient(45deg, #011208, #006622, #00cc44, #a3ffb8, #ffffff)',
                     stops: [
