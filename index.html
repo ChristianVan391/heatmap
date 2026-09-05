@@ -684,9 +684,9 @@
                     const h = heatGrid[i] / 255.0;
 
                 // LOOK HERE ME IN THE FUTER
-                const clipped = Math.pow(h, 2);
+                const clipped = Math.pow(h, 0.8);
 
-                simImageData32[i] = activePalette32[Math.min(255, clipped * 255) | 0];
+                simImageData32[i] = activePalette32[Math.min(255, clipped * 320) | 0];
                 }
                 simCtx.putImageData(simImageData, 0, 0);
 
