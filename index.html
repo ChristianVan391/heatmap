@@ -325,7 +325,7 @@
             // ─── Settings ───────────────────────────────────────────
             let fadeAmount = 1;
             let brushRadius = 60;
-            const brushStrength = 2;
+            const brushStrength = 3.25;
             let isPaused = false;
 
             // ─── Display resolution (device pixels) ─────────────────
@@ -401,7 +401,7 @@
                     ]
                 },
                 blue: {
-                    name: 'Blue',
+                    name: 'Ice',
                     bgColor: '#020a1a',
                     preview: 'linear-gradient(45deg, #020a1a, #0038a8, #0099ff, #80d4ff, #ffffff)',
                     stops: [
@@ -413,7 +413,7 @@
                     ]
                 },
                 green: {
-                    name: 'Green',
+                    name: 'Glow in the dark',
                     bgColor: '#011208',
                     preview: 'linear-gradient(45deg, #011208, #006622, #00cc44, #a3ffb8, #ffffff)',
                     stops: [
@@ -498,7 +498,7 @@
                 // Strength affects falloff profile (higher = flatter, more intense)
                 const strengthPower = 1.0 / brushStrength;
                 // Strength also boosts fade-in speed
-                const fadeInRate = Math.min(1.0, fadeAmount * 0.085 * brushStrength);
+                const fadeInRate = Math.min(1.0, fadeAmount * 0.01 * brushStrength);
 
                 for (let y = minY; y <= maxY; y++) {
                     const py = y - sy;
